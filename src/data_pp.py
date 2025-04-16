@@ -2,6 +2,8 @@ from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting import TimeSeriesDataSet
 import requests
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def fetch_data(start_date, end_date=None):
@@ -112,3 +114,44 @@ def create_dataloaders(training, validation, batch_size=8):
     )
 
     return train_dataloader, val_dataloader
+
+
+def visualize_timeseries_data(dataset_data):
+    data = {
+        'Time Index': dataset_data['time'].numpy(),
+        'Exchange Rate': dataset_data['target'][0].numpy()
+    }
+
+    if 'categoricals' in dataset_data and dataset_data['categoricals'] is not None:
+        cat_data = dataset_data['categoricals'].numpy()
+        if cat_data.shape[1] >= 2:
+            data['Weekday'] = cat_data[:, 0]
+            data['Month'] = cat_data[:, 1]
+
+    df = pd.DataFrame(data)
+
+    print(f"Dataset contains {len(df)} time steps")
+
+    print("\nSample data (first 10 rows):")
+    print(df.head(10))
+
+    print("\nSummary statistics for Exchange Rate:")
+    print(df['Exchange Rate'].describe())
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 10))
+
+    axs[0].plot(df['Time Index'], df['Exchange Rate'])
+    axs[0].set_title('Exchange Rate Over Time')
+    axs[0].set_xlabel('Time Index')
+    axs[0].set_ylabel('Exchange Rate')
+    axs[0].grid(True)
+
+    sns.histplot(df['Exchange Rate'], kde=True, ax=axs[1])
+    axs[1].set_title('Distribution of Exchange Rates')
+    axs[1].set_xlabel('Exchange Rate')
+    axs[1].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+    return df
